@@ -36,6 +36,19 @@ install_requirements = [
     "typing>=3.7,<3.8"
 ]
 
+test_requirements = [
+    "pytest>=3.2",
+    "troposphere>=2.0.0",
+    "moto==1.3.8",
+    "mock==2.0.0",
+    "behave==1.2.5",
+    "freezegun==0.3.12"
+]
+
+setup_requirements = [
+    "pytest-runner>=3"
+]
+
 setup(
     name="sceptre",
     version=get_version("sceptre/__init__.py"),
