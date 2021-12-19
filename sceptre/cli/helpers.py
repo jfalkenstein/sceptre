@@ -15,6 +15,7 @@ from jinja2.exceptions import TemplateError
 from sceptre.exceptions import SceptreException
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status_colourer import StackStatusColourer
+import cfn_flip
 
 
 def catch_exceptions(func):
@@ -94,51 +95,33 @@ def write(var, output_format="json", no_colour=True):
 
 def _generate_json(stream):
     encoder = CustomJsonEncoder(indent=4)
-    if isinstance(stream, list):
-        items = []
+    to_output = _read_in_stream(stream)
+    return encoder.encode(to_output)
+
+
+def _read_in_stream(stream):
+    if isinstance(stream, str):
+        to_output = yaml.load(stream, Loader=CfnYamlLoader)
+    elif isinstance(stream, list):
+        to_output = []
         for item in stream:
-            try:
-                if isinstance(item, dict):
-                    items.append(item)
-                else:
-                    items.append(yaml.load(item, Loader=CfnYamlLoader))
-            except Exception:
-                print("An error occured writing the JSON object.")
-        return encoder.encode(items)
+            if isinstance(item, str):
+                # We use a yaml loader because an unquoted string will be interpreted as a string
+                # Also, YAML is a superset of json, which means almost all json is valid yaml
+                to_output.append(yaml.load(item, Loader=CfnYamlLoader))
+            else:
+                to_output.append(item)
     else:
-        try:
-            return encoder.encode(yaml.load(stream, Loader=CfnYamlLoader))
-        except Exception:
-            return encoder.encode(stream)
+        to_output = stream
+    return to_output
 
 
 def _generate_yaml(stream):
-    if isinstance(stream, list):
-        items = []
-        for item in stream:
-            try:
-                if isinstance(item, dict):
-                    items.append(
-                        yaml.safe_dump(item, default_flow_style=False, explicit_start=True)
-                    )
-                else:
-                    items.append(
-                        yaml.safe_dump(
-                            yaml.load(item, Loader=CfnYamlLoader),
-                            default_flow_style=False, explicit_start=True
-                        )
-                    )
-            except Exception:
-                print("An error occured whilst writing the YAML object.")
-        return yaml.safe_dump(
-            [yaml.load(item, Loader=CfnYamlLoader) for item in items],
-            default_flow_style=False, explicit_start=True
-        )
-    else:
-        try:
-            return yaml.safe_loads(stream)
-        except Exception:
-            return stream
+    to_output = _read_in_stream(stream)
+    return yaml.safe_dump(
+        yaml.load(to_output, Loader=CfnYamlLoader),
+        default_flow_style=False, explicit_start=True
+    )
 
 
 def _generate_text(stream):
