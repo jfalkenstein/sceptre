@@ -14,7 +14,7 @@ from deepdiff import DeepDiff
 from mock import MagicMock, patch, sentinel
 
 from sceptre.cli import cli
-from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
+from sceptre.cli.helpers import catch_exceptions
 from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
 from sceptre.config.reader import ConfigReader
 from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
@@ -910,11 +910,6 @@ class TestCli(object):
         mock_format.assert_called_once_with("string")
         mock_colour.assert_called_once_with(sentinel.response)
         assert response == sentinel.coloured_response
-
-    def test_CustomJsonEncoder_with_non_json_serialisable_object(self):
-        encoder = CustomJsonEncoder()
-        response = encoder.encode(datetime.datetime(2016, 5, 3))
-        assert response == '"2016-05-03 00:00:00"'
 
     def test_diff_command__diff_type_is_deepdiff__passes_deepdiff_stack_differ_to_actions(self):
         self.runner.invoke(cli, 'diff -t deepdiff dev/vpc.yaml')
